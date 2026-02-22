@@ -1,0 +1,121 @@
+# QA Gate Checklist (A-I)
+
+Use this checklist for quality control of Bitrix modules and updates.
+
+Execution order is mandatory:
+
+1. Static audit first (`rg`/search/logical inspection).
+2. Dynamic tests second (admin UI, CLI, integration runtime).
+3. Unified report with risk-ranked fixes.
+
+For every section A-I output:
+
+- Status: `PASS` / `FAIL` / `N-A`
+- Evidence: command, screenshot, log, SQL
+- Risk: `low` / `med` / `high`
+- Concrete fix: what/where/how
+
+## A) Install / Uninstall / Update
+
+- Fresh install completes without critical errors.
+- Reinstall and uninstall scenarios are deterministic.
+- Update path works from previous target versions.
+- `savedata=Y/N` behavior is explicit and correct.
+
+Evidence examples:
+
+- install/uninstall logs
+- DB state before/after
+- module registration state (`b_module`)
+
+## B) Code Quality (Localization, Magic Numbers, Debug)
+
+- UI strings are localized (`Loc::getMessage`, `lang/*`).
+- No hardcoded debug output (`var_dump`, `print_r`, `die`, `dd`).
+- Critical constants/config are not hidden as unexplained magic numbers.
+- No dead/test code in production path.
+
+Static commands:
+
+```bash
+rg -n "var_dump|print_r\\(|die\\(|dd\\(" local/modules/<module_id>
+rg -n "Loc::getMessage|GetMessage\\(" local/modules/<module_id>
+rg -n "[^A-Z_]\\b(300|500|86400)\\b" local/modules/<module_id>
+```
+
+## C) End-to-End Scenarios (Top 5-10)
+
+- Define 5-10 most critical business scenarios.
+- Cover happy path + key negative path for each.
+- Validate full chain: UI -> service -> storage -> side effects.
+
+Required output:
+
+- scenario list with expected result and actual result
+- failed scenario repro steps
+
+## D) Performance and Scaling
+
+- Large dataset list/filter behavior checked.
+- Slow query risk reviewed.
+- Batch/chunk processing boundaries checked.
+- Caching and invalidation are consistent.
+
+Evidence examples:
+
+- SQL/profile output
+- timings on realistic data volume
+- cache hit/miss behavior
+
+## E) UX on Large Data
+
+- Admin lists remain usable with large rows count.
+- Filters, sorting, pagination stay responsive.
+- Mass actions are predictable and safe.
+- No blocking UI operations without progress indication.
+
+## F) Security (Rights, CSRF, Path Traversal)
+
+- Rights checks protect read/write/delete actions.
+- `check_bitrix_sessid()` on state-changing actions.
+- File/path input does not allow traversal.
+- Secrets are not exposed in code/log/UI.
+
+Static commands:
+
+```bash
+rg -n "check_bitrix_sessid|bitrix_sessid_post|bitrix_sessid_get" local/modules/<module_id>
+rg -n "AuthForm|GetGroupRight|isAdmin|HighloadBlockRightsTable" local/modules/<module_id>
+rg -n "\\.\\./|DOCUMENT_ROOT.*\\$_(GET|POST|REQUEST)" local/modules/<module_id>
+```
+
+## G) Reliability (Locks, Resume, Concurrency)
+
+- Parallel execution risk is assessed for write paths.
+- Long tasks have resume/retry strategy where needed.
+- Duplicate runs are idempotent where required.
+- No unsafe race in group actions/batch handlers.
+
+## H) Diagnostics / Logging
+
+- Errors are logged with enough context.
+- Operational logs are actionable and not noisy.
+- Failure states are observable (not silent).
+
+Evidence examples:
+
+- app log excerpt
+- monitored error sample
+- correlation context fields
+
+## I) Compatibility
+
+- PHP/MySQL baseline compatibility checked (`PHP 8+`, `MySQL 8+`).
+- Backward compatibility for existing data/flows verified.
+- Bitrix edition/platform constraints respected (Site/Box/Cloud REST).
+
+## Final Deliverables
+
+1. Unified QA report (A-I sections).
+2. Risk-ranked fix list (high -> med -> low).
+3. Re-test checklist for failed items.

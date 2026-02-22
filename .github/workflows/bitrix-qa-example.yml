@@ -1,0 +1,145 @@
+name: Bitrix QA Example
+
+on:
+  workflow_dispatch:
+    inputs:
+      module_id:
+        description: "Bitrix module id (vendor.module)"
+        required: true
+        default: "vendor.module"
+      project_root:
+        description: "Project root path in repository"
+        required: true
+        default: "."
+      bitrix_root:
+        description: "Absolute BITRIX_ROOT for integration suite (optional)"
+        required: false
+        default: ""
+      skip_integration:
+        description: "Skip integration suite"
+        required: true
+        type: boolean
+        default: true
+  pull_request:
+    paths:
+      - "skills/bitrix/**"
+      - ".github/workflows/bitrix-qa-example.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "skills/bitrix/**"
+      - ".github/workflows/bitrix-qa-example.yml"
+
+jobs:
+  skill-smoke:
+    name: Skill smoke check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Lint scripts (compile)
+        run: |
+          set -euo pipefail
+          find skills/bitrix/scripts -name "*.py" -print0 | xargs -0 -n1 python3 -m py_compile
+
+      - name: Smoke scaffold + qa_run
+        run: |
+          set -euo pipefail
+          TMP_DIR="$(mktemp -d)"
+          python3 skills/bitrix/scripts/scaffold_root_tests.py \
+            --project-root "$TMP_DIR" \
+            --module-id "vendor.module" \
+            --force-bitrix
+          python3 skills/bitrix/scripts/qa_run.py \
+            --project-root "$TMP_DIR" \
+            --module-id "vendor.module" \
+            --skip-integration \
+            --report "$TMP_DIR/tests/qa-run-report-smoke.md"
+          ls -la "$TMP_DIR/tests"
+
+      - name: Upload smoke report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-run-smoke-report
+          path: /tmp/**/qa-run-report-smoke.md
+          if-no-files-found: warn
+
+  project-qa:
+    name: Project QA run
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          tools: composer
+
+      - name: Install dependencies if composer.json exists
+        run: |
+          set -euo pipefail
+          ROOT="${{ github.event.inputs.project_root }}"
+          if [ -f "$ROOT/composer.json" ]; then
+            cd "$ROOT"
+            composer install --no-interaction --no-progress
+          else
+            echo "composer.json not found at $ROOT, skipping composer install"
+          fi
+
+      - name: Run qa_run.py
+        id: run_qa
+        run: |
+          set -euo pipefail
+          ROOT="${{ github.event.inputs.project_root }}"
+          REPORT="$ROOT/tests/qa-run-report-ci.md"
+          mkdir -p "$ROOT/tests"
+
+          EXTRA_ARGS=()
+          if [ "${{ github.event.inputs.skip_integration }}" = "true" ]; then
+            EXTRA_ARGS+=(--skip-integration)
+          fi
+          if [ -n "${{ github.event.inputs.bitrix_root }}" ]; then
+            EXTRA_ARGS+=(--bitrix-root "${{ github.event.inputs.bitrix_root }}")
+          fi
+
+          set +e
+          python3 skills/bitrix/scripts/qa_run.py \
+            --project-root "$ROOT" \
+            --module-id "${{ github.event.inputs.module_id }}" \
+            --report "$REPORT" \
+            "${EXTRA_ARGS[@]}"
+          QA_EXIT=$?
+          set -e
+
+          echo "qa_exit_code=$QA_EXIT" >> "$GITHUB_OUTPUT"
+          echo "qa_report=$REPORT" >> "$GITHUB_OUTPUT"
+
+      - name: Upload QA report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-run-report
+          path: ${{ steps.run_qa.outputs.qa_report }}
+          if-no-files-found: warn
+
+      - name: Fail workflow on QA FAIL
+        if: steps.run_qa.outputs.qa_exit_code != '0'
+        run: |
+          echo "qa_run.py returned non-zero exit code: ${{ steps.run_qa.outputs.qa_exit_code }}"
+          exit 1
