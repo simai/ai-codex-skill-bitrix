@@ -82,6 +82,19 @@ If definition of done is missing, derive a temporary done contract:
 - Keep webhook and OAuth secrets out of repository and frontend runtime payloads.
 - For risky refactors, preserve backward compatibility through adapters, feature flags, or phased rollout.
 
+## Practical Patterns: `bitrix:lists` in Bitrix24 Air
+
+- For Bitrix24 Air header actions, prefer `\Bitrix\UI\Toolbar\Facade\Toolbar::addButton(...)` over ad-hoc markup in view targets.
+- If you use `inside_pagetitle`, ensure page body class includes `pagetitle-toolbar-field-view`; without it controls can disappear.
+- In custom `bitrix:lists` templates, `list_element_edit.php` often orchestrates both view-mode and edit-mode routing; verify this file first.
+- In edit flow, pass `LIST_URL` as the real list route from `URL_TEMPLATES["list"]` with `#list_id#` / `#section_id#` replacements; do not reuse current page with `?element_just_view=y`.
+- For edit visibility, combine list permission and element right checks:
+  - `CListPermissions::CheckAccess(...) >= CListPermissions::CAN_WRITE`
+  - `CIBlockElementRights::UserHasRightTo(..., "element_edit")`
+- When actions are duplicated, check both `page__toolbar` and `page__actions`; remove fallback rendering from `below_pagetitle` if toolbar already renders buttons.
+- After live template fixes, clear `bitrix/cache`, `bitrix/managed_cache`, `bitrix/stack_cache`, and `bitrix/html_pages`.
+- If `patch` tooling was used, remove `*.orig` artifacts before commit.
+
 ## Artifact Contract
 
 Use mode-specific outputs from `references/work-modes.md` and templates from `references/template-*.md`.
