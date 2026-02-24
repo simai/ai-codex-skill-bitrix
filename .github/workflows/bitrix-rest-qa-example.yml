@@ -1,0 +1,175 @@
+name: Bitrix REST + QA Example
+
+on:
+  workflow_dispatch:
+    inputs:
+      module_id:
+        description: "Bitrix module id (vendor.module)"
+        required: true
+        default: "vendor.module"
+      project_root:
+        description: "Project root path in repository"
+        required: true
+        default: "."
+      bitrix_root:
+        description: "Absolute BITRIX_ROOT for integration suite (optional)"
+        required: false
+        default: ""
+      skip_integration:
+        description: "Skip integration suite"
+        required: true
+        type: boolean
+        default: true
+      rest_preset:
+        description: "REST artifact preset"
+        required: true
+        type: choice
+        default: "rest_all"
+        options:
+          - rest_all
+          - rest_crm
+          - rest_tasks
+          - rest_user
+          - rest_disk
+      rest_output_dir:
+        description: "REST artifact output dir in workspace"
+        required: true
+        default: "artifacts/rest"
+      rest_overwrite:
+        description: "Overwrite REST artifact files"
+        required: true
+        type: boolean
+        default: true
+  pull_request:
+    paths:
+      - "skills/bitrix/**"
+      - ".github/workflows/bitrix-rest-qa-example.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "skills/bitrix/**"
+      - ".github/workflows/bitrix-rest-qa-example.yml"
+
+jobs:
+  rest-and-qa:
+    name: Generate REST artifacts and run QA
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          tools: composer
+
+      - name: Lint scripts (compile)
+        run: |
+          set -euo pipefail
+          find skills/bitrix/scripts -name "*.py" -print0 | xargs -0 -n1 python3 -m py_compile
+
+      - name: Install composer dependencies (if present)
+        env:
+          INPUT_PROJECT_ROOT: ${{ github.event.inputs.project_root }}
+        run: |
+          set -euo pipefail
+          PROJECT_ROOT="${INPUT_PROJECT_ROOT:-.}"
+          if [ -f "$PROJECT_ROOT/composer.json" ]; then
+            cd "$PROJECT_ROOT"
+            composer install --no-interaction --no-progress
+          else
+            echo "composer.json not found at $PROJECT_ROOT, skipping install"
+          fi
+
+      - name: Generate REST artifacts
+        id: rest
+        env:
+          INPUT_REST_PRESET: ${{ github.event.inputs.rest_preset }}
+          INPUT_REST_OUTPUT_DIR: ${{ github.event.inputs.rest_output_dir }}
+          INPUT_REST_OVERWRITE: ${{ github.event.inputs.rest_overwrite }}
+        run: |
+          set -euo pipefail
+          REST_PRESET="${INPUT_REST_PRESET:-rest_all}"
+          REST_OUTPUT_DIR="${INPUT_REST_OUTPUT_DIR:-artifacts/rest}"
+          REST_OVERWRITE="${INPUT_REST_OVERWRITE:-true}"
+
+          ARGS=(--out "$REST_OUTPUT_DIR" --preset "$REST_PRESET")
+          if [ "$REST_OVERWRITE" = "true" ]; then
+            ARGS+=(--overwrite)
+          fi
+
+          python3 skills/bitrix/scripts/scaffold_artifacts.py "${ARGS[@]}"
+
+          echo "Generated REST artifacts:"
+          find "$REST_OUTPUT_DIR" -maxdepth 1 -type f | sort
+
+          SAFE_PRESET="$(echo "$REST_PRESET" | tr '/' '_')"
+          echo "artifact_path=$REST_OUTPUT_DIR" >> "$GITHUB_OUTPUT"
+          echo "artifact_name=rest-artifacts-$SAFE_PRESET" >> "$GITHUB_OUTPUT"
+
+      - name: Run qa_run.py
+        id: qa
+        env:
+          INPUT_MODULE_ID: ${{ github.event.inputs.module_id }}
+          INPUT_PROJECT_ROOT: ${{ github.event.inputs.project_root }}
+          INPUT_BITRIX_ROOT: ${{ github.event.inputs.bitrix_root }}
+          INPUT_SKIP_INTEGRATION: ${{ github.event.inputs.skip_integration }}
+        run: |
+          set -euo pipefail
+          MODULE_ID="${INPUT_MODULE_ID:-vendor.module}"
+          PROJECT_ROOT="${INPUT_PROJECT_ROOT:-.}"
+          BITRIX_ROOT="${INPUT_BITRIX_ROOT:-}"
+          SKIP_INTEGRATION="${INPUT_SKIP_INTEGRATION:-true}"
+          REPORT_PATH="$PROJECT_ROOT/tests/qa-run-report-ci.md"
+
+          mkdir -p "$PROJECT_ROOT/tests"
+
+          EXTRA_ARGS=()
+          if [ "$SKIP_INTEGRATION" = "true" ]; then
+            EXTRA_ARGS+=(--skip-integration)
+          fi
+          if [ -n "$BITRIX_ROOT" ]; then
+            EXTRA_ARGS+=(--bitrix-root "$BITRIX_ROOT")
+          fi
+
+          set +e
+          python3 skills/bitrix/scripts/qa_run.py \
+            --project-root "$PROJECT_ROOT" \
+            --module-id "$MODULE_ID" \
+            --report "$REPORT_PATH" \
+            "${EXTRA_ARGS[@]}"
+          QA_EXIT=$?
+          set -e
+
+          echo "exit_code=$QA_EXIT" >> "$GITHUB_OUTPUT"
+          echo "report=$REPORT_PATH" >> "$GITHUB_OUTPUT"
+
+      - name: Upload REST artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.rest.outputs.artifact_name }}
+          path: ${{ steps.rest.outputs.artifact_path }}
+          if-no-files-found: error
+
+      - name: Upload QA report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-run-report
+          path: ${{ steps.qa.outputs.report }}
+          if-no-files-found: warn
+
+      - name: Fail workflow on QA FAIL
+        if: steps.qa.outputs.exit_code != '0'
+        run: |
+          echo "qa_run.py returned non-zero exit code: ${{ steps.qa.outputs.exit_code }}"
+          exit 1
+

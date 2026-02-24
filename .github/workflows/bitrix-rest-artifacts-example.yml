@@ -1,0 +1,88 @@
+name: Bitrix REST Artifacts Example
+
+on:
+  workflow_dispatch:
+    inputs:
+      preset:
+        description: "Artifact preset"
+        required: true
+        default: "rest_all"
+        type: choice
+        options:
+          - rest_all
+          - rest_crm
+          - rest_tasks
+          - rest_user
+          - rest_disk
+      output_dir:
+        description: "Output directory in workspace"
+        required: true
+        default: "artifacts/rest"
+      overwrite:
+        description: "Overwrite existing files in output dir"
+        required: true
+        type: boolean
+        default: true
+  pull_request:
+    paths:
+      - "skills/bitrix/**"
+      - ".github/workflows/bitrix-rest-artifacts-example.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "skills/bitrix/**"
+      - ".github/workflows/bitrix-rest-artifacts-example.yml"
+
+jobs:
+  rest-artifacts:
+    name: Generate REST artifacts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Lint scripts (compile)
+        run: |
+          set -euo pipefail
+          find skills/bitrix/scripts -name "*.py" -print0 | xargs -0 -n1 python3 -m py_compile
+
+      - name: Generate artifacts
+        id: generate
+        env:
+          INPUT_PRESET: ${{ github.event.inputs.preset }}
+          INPUT_OUTPUT_DIR: ${{ github.event.inputs.output_dir }}
+          INPUT_OVERWRITE: ${{ github.event.inputs.overwrite }}
+        run: |
+          set -euo pipefail
+          PRESET="${INPUT_PRESET:-rest_all}"
+          OUTPUT_DIR="${INPUT_OUTPUT_DIR:-artifacts/rest}"
+          OVERWRITE="${INPUT_OVERWRITE:-true}"
+
+          ARGS=(--out "$OUTPUT_DIR" --preset "$PRESET")
+          if [ "$OVERWRITE" = "true" ]; then
+            ARGS+=(--overwrite)
+          fi
+
+          python3 skills/bitrix/scripts/scaffold_artifacts.py "${ARGS[@]}"
+
+          echo "Generated files in $OUTPUT_DIR:"
+          find "$OUTPUT_DIR" -maxdepth 1 -type f | sort
+
+          SAFE_PRESET="$(echo "$PRESET" | tr '/' '_')"
+          echo "artifact_path=$OUTPUT_DIR" >> "$GITHUB_OUTPUT"
+          echo "artifact_name=rest-artifacts-$SAFE_PRESET" >> "$GITHUB_OUTPUT"
+
+      - name: Upload REST artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.generate.outputs.artifact_name }}
+          path: ${{ steps.generate.outputs.artifact_path }}
+          if-no-files-found: error
+

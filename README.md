@@ -21,6 +21,9 @@ Repository layout:
 - `skills/bitrix/references/`
 - `skills/bitrix/references/template-*.md`
 - `skills/bitrix/references/bitrix24-rest-integration.md`
+- `skills/bitrix/references/bitrix24-rest-domain-*.md`
+- `skills/bitrix/references/bitrix24-rest-domain-quickstart.md`
+- `skills/bitrix/references/template-rest-domain-*-artifact-pack.md`
 - `skills/bitrix/references/bitrix24-marketplace-publication.md`
 - `skills/bitrix/references/qa-gate-checklist.md`
 - `skills/bitrix/references/external-knowledge.md`
@@ -33,9 +36,12 @@ Repository layout:
 - `skills/bitrix/scripts/search_reference_dump.py`
 - `skills/bitrix/references/troubleshooting.md`
 - `skills/bitrix/examples/`
+- `skills/bitrix/examples/rest-domain-artifacts/`
 - `skills/bitrix/examples/seeds/`
 - `skills/bitrix/examples/ci/`
 - `.github/workflows/bitrix-qa-example.yml`
+- `.github/workflows/bitrix-rest-artifacts-example.yml`
+- `.github/workflows/bitrix-rest-qa-example.yml`
 - root files: `README.md`, `.gitattributes`, `.git/`
 
 Install target:
@@ -150,7 +156,41 @@ python3 skills/bitrix/scripts/search_reference_dump.py \
   --limit 10
 ```
 
-## 8) Optional module admin scaffold
+## 8) Optional artifact scaffold (release/update/rest)
+
+Generate predefined artifact packs from templates:
+
+```bash
+# full release/update/qa set
+python3 skills/bitrix/scripts/scaffold_artifacts.py \
+  --out "/path/to/artifacts" \
+  --preset full
+
+# REST domain packs
+python3 skills/bitrix/scripts/scaffold_artifacts.py \
+  --out "/path/to/artifacts/rest" \
+  --preset rest_all
+
+# one domain only
+python3 skills/bitrix/scripts/scaffold_artifacts.py \
+  --out "/path/to/artifacts/rest-crm" \
+  --preset rest_crm
+```
+
+Available presets:
+
+- `update`
+- `release`
+- `marketplace`
+- `qa`
+- `rest_crm`
+- `rest_tasks`
+- `rest_user`
+- `rest_disk`
+- `rest_all`
+- `full`
+
+## 9) Optional module admin scaffold
 
 ```bash
 python3 skills/bitrix/scripts/scaffold_module_admin.py \
@@ -160,7 +200,7 @@ python3 skills/bitrix/scripts/scaffold_module_admin.py \
   --namespace "Vendor\\Module"
 ```
 
-## 9) Optional data-layer scaffold (IBlock/HL)
+## 10) Optional data-layer scaffold (IBlock/HL)
 
 ```bash
 python3 skills/bitrix/scripts/scaffold_data_layer.py \
@@ -173,7 +213,7 @@ python3 skills/bitrix/scripts/scaffold_data_layer.py \
   --namespace "Vendor\\Module"
 ```
 
-## 10) Optional QA gate scaffold (A-I)
+## 11) Optional QA gate scaffold (A-I)
 
 ```bash
 python3 skills/bitrix/scripts/scaffold_qa_gate.py \
@@ -184,7 +224,7 @@ python3 skills/bitrix/scripts/scaffold_qa_gate.py \
   --environment "stage"
 ```
 
-## 11) Optional root test toolkit scaffold
+## 12) Optional root test toolkit scaffold
 
 ```bash
 python3 skills/bitrix/scripts/scaffold_root_tests.py \
@@ -192,7 +232,7 @@ python3 skills/bitrix/scripts/scaffold_root_tests.py \
   --module-id "vendor.module"
 ```
 
-## 12) Optional unified QA run (static + integration + one report)
+## 13) Optional unified QA run (static + integration + one report)
 
 ```bash
 python3 skills/bitrix/scripts/qa_run.py \
@@ -205,7 +245,7 @@ Report output includes:
 - A-I summary table (`PASS/FAIL/N-A`, evidence, risk, concrete fix)
 - fix backlog sorted by risk (`High`, `Medium`, `Low`)
 
-## 13) CI workflow example (artifact publishing)
+## 14) CI workflow example (artifact publishing)
 
 Repository includes ready workflow:
 
@@ -214,16 +254,28 @@ Repository includes ready workflow:
 Template for target Bitrix repositories:
 
 - `skills/bitrix/examples/ci/github-actions-bitrix-qa.yml`
+- `skills/bitrix/examples/ci/github-actions-bitrix-rest-artifacts.yml`
+- `skills/bitrix/examples/ci/github-actions-bitrix-rest-qa.yml`
 
-Both variants run `qa_run.py` and upload QA markdown report as artifact.
+- QA variant runs `qa_run.py` and uploads QA markdown report as artifact.
+- REST-artifact variant runs `scaffold_artifacts.py --preset rest_*` and uploads generated markdown packs as artifact.
+- Combined variant runs both steps in one workflow and uploads both artifact sets.
 
-## 14) Scenario examples
+## 15) Scenario examples
 
 - `skills/bitrix/examples/new-module-site-management.md`
 - `skills/bitrix/examples/existing-project-fix.md`
 - `skills/bitrix/examples/bitrix24-cloud-rest-app.md`
 
-## 15) Large dataset seeds (UX/perf)
+REST domain artifact examples:
+
+- `skills/bitrix/examples/rest-domain-artifacts/README.md`
+- `skills/bitrix/examples/rest-domain-artifacts/crm.md`
+- `skills/bitrix/examples/rest-domain-artifacts/tasks.md`
+- `skills/bitrix/examples/rest-domain-artifacts/user.md`
+- `skills/bitrix/examples/rest-domain-artifacts/disk.md`
+
+## 16) Large dataset seeds (UX/perf)
 
 - `skills/bitrix/examples/seeds/mysql_large_list_seed.sql`
 - `skills/bitrix/examples/seeds/mysql_large_list_cleanup.sql`

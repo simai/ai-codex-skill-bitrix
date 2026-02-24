@@ -1,0 +1,70 @@
+name: Bitrix REST Artifacts
+
+on:
+  workflow_dispatch:
+    inputs:
+      preset:
+        description: "Artifact preset"
+        required: true
+        default: "rest_all"
+        type: choice
+        options:
+          - rest_all
+          - rest_crm
+          - rest_tasks
+          - rest_user
+          - rest_disk
+      output_dir:
+        description: "Output directory in repository workspace"
+        required: true
+        default: "artifacts/rest"
+      overwrite:
+        description: "Overwrite existing files in output dir"
+        required: true
+        type: boolean
+        default: true
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "skills/bitrix/**"
+      - ".github/workflows/bitrix-rest-artifacts.yml"
+
+jobs:
+  rest-artifacts:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Generate REST artifact pack
+        id: generate
+        run: |
+          set -euo pipefail
+          PRESET="${{ github.event.inputs.preset || 'rest_all' }}"
+          OUTPUT_DIR="${{ github.event.inputs.output_dir || 'artifacts/rest' }}"
+          OVERWRITE="${{ github.event.inputs.overwrite || 'true' }}"
+
+          ARGS=(--out "$OUTPUT_DIR" --preset "$PRESET")
+          if [ "$OVERWRITE" = "true" ]; then
+            ARGS+=(--overwrite)
+          fi
+
+          python3 skills/bitrix/scripts/scaffold_artifacts.py "${ARGS[@]}"
+
+          echo "artifact_path=$OUTPUT_DIR" >> "$GITHUB_OUTPUT"
+          echo "artifact_name=rest-artifacts-$PRESET" >> "$GITHUB_OUTPUT"
+
+      - name: Upload REST artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.generate.outputs.artifact_name }}
+          path: ${{ steps.generate.outputs.artifact_path }}
+          if-no-files-found: error
+
