@@ -114,6 +114,41 @@ Evidence examples:
 - Backward compatibility for existing data/flows verified.
 - Bitrix edition/platform constraints respected (Site/Box/Cloud REST).
 
+## REST App Addendum (Cloud/Box REST mode)
+
+Apply this addendum when task includes webhook/OAuth/events integrations.
+
+- Capability bootstrap validated (`scope`, `method.get`, `feature.get`) with evidence.
+- Event handlers validate `application_token`.
+- Confirm-flow covered (`METHOD_CONFIRM_WAITING`, `METHOD_CONFIRM_DENIED`, `OnAppMethodConfirm`).
+- Offline mode (if used) follows safe flow:
+  - `event.offline.get` with `clear=0`
+  - `process_id` tracked
+  - `event.offline.clear` / `event.offline.error` used explicitly
+- Install/update/reinstall rebind routine is verified (`event.get` before/after).
+- REST v3 usage is explicit (`/rest/api/`), with fallback or hybrid routing documented.
+
+## REST Domain Addendum (CRM/Tasks/User/Disk)
+
+Apply for domain-heavy REST integrations.
+
+- CRM:
+  - `crm.item.*` usage is primary for new code.
+  - `entityTypeId` mapping and `crm.item.fields` cache are validated.
+  - legacy `crm.*` branches are either absent or feature-flagged.
+- Tasks:
+  - `tasks.task.*` is used instead of deprecated methods.
+  - required custom fields are detected before create/update.
+  - `UF_CRM_TASK` and `UF_TASK_WEBDAV_FILES` value formats are validated.
+- User:
+  - scope level is least-privilege and justified.
+  - `user.add` / `user.update` paths are admin-protected.
+  - `user.search` filter contract (`FIND` exclusivity) is respected.
+- Disk:
+  - upload flow (`fileContent` or upload URL) is explicit and tested.
+  - soft-delete/hard-delete policy is explicit and verified.
+  - rights assignment (`TASK_ID`, `ACCESS_CODE`) is validated by role-based checks.
+
 ## Final Deliverables
 
 1. Unified QA report (A-I sections).

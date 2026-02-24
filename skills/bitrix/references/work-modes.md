@@ -130,4 +130,20 @@ Required outputs:
 Use with:
 
 - `references/bitrix24-rest-integration.md`
+- `references/bitrix24-rest-docs-triage.md`
+- `references/bitrix24-rest-v3-migration.md`
+- `references/bitrix24-rest-event-lifecycle.md`
+- `references/bitrix24-rest-domain-crm.md`
+- `references/bitrix24-rest-domain-tasks.md`
+- `references/bitrix24-rest-domain-user.md`
+- `references/bitrix24-rest-domain-disk.md`
+- `references/bitrix24-rest-domain-quickstart.md`
+- `references/template-rest-domain-crm-artifact-pack.md`
+- `references/template-rest-domain-tasks-artifact-pack.md`
+- `references/template-rest-domain-user-artifact-pack.md`
+- `references/template-rest-domain-disk-artifact-pack.md`
+- `references/template-rest-capability-bootstrap.md`
+- `references/template-rest-offline-worker-contract.md`
+- `references/template-rest-method-confirm-handler.md`
 - `references/testing-qa.md`
+- `examples/rest-domain-artifacts/README.md`

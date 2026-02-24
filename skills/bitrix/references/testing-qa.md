@@ -8,6 +8,19 @@ For strict quality gate (A-I sections and static->dynamic order), also apply:
 - `references/template-qa-audit-prompt.md`
 - `references/root-testing-toolkit.md`
 - `references/troubleshooting.md`
+- `references/bitrix24-rest-integration.md`
+- `references/bitrix24-rest-event-lifecycle.md`
+- `references/bitrix24-rest-domain-crm.md`
+- `references/bitrix24-rest-domain-tasks.md`
+- `references/bitrix24-rest-domain-user.md`
+- `references/bitrix24-rest-domain-disk.md`
+- `references/template-rest-domain-crm-artifact-pack.md`
+- `references/template-rest-domain-tasks-artifact-pack.md`
+- `references/template-rest-domain-user-artifact-pack.md`
+- `references/template-rest-domain-disk-artifact-pack.md`
+- `references/template-rest-capability-bootstrap.md`
+- `references/template-rest-offline-worker-contract.md`
+- `references/template-rest-method-confirm-handler.md`
 - `scripts/scaffold_qa_gate.py`
 - `scripts/scaffold_root_tests.py`
 - `scripts/qa_run.py`
@@ -50,6 +63,22 @@ Execution order:
 - No silent failures without logging.
 - Idempotency is preserved for repeated update/operation runs.
 - Concurrency-sensitive operations are evaluated when relevant.
+
+REST app addendum (Cloud/Box integration mode):
+
+- `application_token` validation is enforced in event handlers.
+- Capability probe exists and is persisted (`scope`, `method.get`, `feature.get`).
+- Confirm-flow is handled (`METHOD_CONFIRM_WAITING` / `METHOD_CONFIRM_DENIED` / `OnAppMethodConfirm`).
+- Offline queue safety is guaranteed (`clear=0`, `process_id`, `event.offline.clear`, `event.offline.error`) where offline mode is used.
+- Rebind policy exists for install/update/reinstall cycles.
+- `event.unbind` admin-bound behavior is covered in runbook/operations.
+
+REST domain addendum (apply when domain is in scope):
+
+- CRM: universal `crm.item.*` is preferred and legacy branches are explicitly controlled.
+- Tasks: no `tasks/deprecated/*` usage in production flow; required UF fields are validated.
+- User: scope minimization (`user_brief`/`user_basic`/`user`) is verified and PII logs are masked.
+- Disk: upload/delete policy is explicit (direct vs URL upload, soft vs hard delete) and rights are verified.
 
 ## Evidence Collection
 

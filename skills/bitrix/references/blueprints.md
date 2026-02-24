@@ -145,13 +145,31 @@ Execution pattern:
 - IBlock property migration starter: `references/template-migration-iblock-property-updown.php.md`
 - Agents migration starter: `references/template-migration-agents-updown.php.md`
 - Rollback notes starter: `references/template-migration-rollback-notes.md`
+- REST capability bootstrap starter: `references/template-rest-capability-bootstrap.md`
+- REST offline worker contract starter: `references/template-rest-offline-worker-contract.md`
+- REST method-confirm handler starter: `references/template-rest-method-confirm-handler.md`
 - Data-layer scaffolder script: `scripts/scaffold_data_layer.py`
 - QA gate scaffolder script: `scripts/scaffold_qa_gate.py`
 - Root test toolkit scaffolder script: `scripts/scaffold_root_tests.py`
 - Unified QA runner script: `scripts/qa_run.py`
 - Troubleshooting runbook: `references/troubleshooting.md`
+- REST docs source triage: `references/bitrix24-rest-docs-triage.md`
+- REST v3 migration guide: `references/bitrix24-rest-v3-migration.md`
+- REST event lifecycle guide: `references/bitrix24-rest-event-lifecycle.md`
+- REST domain quickstart: `references/bitrix24-rest-domain-quickstart.md`
+- REST domain pack (CRM): `references/bitrix24-rest-domain-crm.md`
+- REST domain pack (Tasks): `references/bitrix24-rest-domain-tasks.md`
+- REST domain pack (User): `references/bitrix24-rest-domain-user.md`
+- REST domain pack (Disk): `references/bitrix24-rest-domain-disk.md`
+- REST artifact template (CRM): `references/template-rest-domain-crm-artifact-pack.md`
+- REST artifact template (Tasks): `references/template-rest-domain-tasks-artifact-pack.md`
+- REST artifact template (User): `references/template-rest-domain-user-artifact-pack.md`
+- REST artifact template (Disk): `references/template-rest-domain-disk-artifact-pack.md`
 - Scenario examples: `examples/new-module-site-management.md`, `examples/existing-project-fix.md`, `examples/bitrix24-cloud-rest-app.md`
+- REST domain artifact examples: `examples/rest-domain-artifacts/README.md`
 - Large-data seed pack: `examples/seeds/README.md`
 - CI QA template: `examples/ci/github-actions-bitrix-qa.yml`
+- CI REST artifacts template: `examples/ci/github-actions-bitrix-rest-artifacts.yml`
+- CI REST + QA template: `examples/ci/github-actions-bitrix-rest-qa.yml`
 - Detailed admin implementation patterns: `references/admin-ui-patterns-cookbook.md`
 - IBlock/HL data and admin patterns: `references/iblock-hlblock-patterns.md`

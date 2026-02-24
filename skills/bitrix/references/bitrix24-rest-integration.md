@@ -8,35 +8,96 @@ Apply this guide when implementing Bitrix24 REST integrations, local apps, or ma
 - Bitrix24 box: REST app flows plus optional server-side extension patterns.
 - Custom REST methods are a box-specific capability; do not assume they exist in cloud.
 
+## Documentation Confidence Policy
+
+When using external docs dumps, apply source triage first:
+
+- primary source: `references/bitrix24-rest-docs-triage.md`
+- avoid implementing core contracts from pages marked as in-progress (`Мы еще обновляем эту страницу`, `TO-DO _не выгружается на prod_`)
+- treat legacy pages (`outdated`, `Развитие метода остановлено`) as compatibility-only references
+
+Use domain-specific packs when integration is focused on one business area:
+
+- `references/bitrix24-rest-domain-crm.md`
+- `references/bitrix24-rest-domain-tasks.md`
+- `references/bitrix24-rest-domain-user.md`
+- `references/bitrix24-rest-domain-disk.md`
+- `references/bitrix24-rest-domain-quickstart.md`
+
+Use matching artifact templates for delivery:
+
+- `references/template-rest-domain-crm-artifact-pack.md`
+- `references/template-rest-domain-tasks-artifact-pack.md`
+- `references/template-rest-domain-user-artifact-pack.md`
+- `references/template-rest-domain-disk-artifact-pack.md`
+
 ## Runtime Capability Discovery
 
-- At install/startup, detect capabilities per portal using:
-  - `scope` (granted scopes),
-  - `method.get` (method availability),
-  - `feature.get` (feature gates such as offline events).
-- Cache capability profile by portal/member id, but refresh after app reinstall/version update.
-- Fail fast with explicit diagnostics when required methods or features are unavailable.
+At install/startup, detect capabilities per portal:
+
+- `scope` (granted scopes)
+- `method.get` (`isExisting` and `isAvailable`)
+- `feature.get` (feature gates such as `rest_offline_extended`, `rest_auth_connector`)
+
+Rules:
+
+- cache capability profile by portal (`member_id`/domain)
+- refresh profile after reinstall/update/token refresh
+- fail fast with explicit diagnostics when required methods/features are missing
+- do not rely on legacy `methods` as primary capability source
 
 ## Auth Strategy
 
 - Use incoming webhooks for one-portal local automation with minimal setup.
 - Use OAuth 2.0 for local apps with UI/API-only mode and for marketplace apps.
-- Never expose webhook secrets in frontend code or public repositories.
-- For box + cloud compatibility, refresh OAuth tokens via `oauth.bitrix.info`.
+- Never expose webhook secrets in frontend code or repositories.
+- For box + cloud compatibility, refresh OAuth tokens via `oauth.bitrix.info` (`server_endpoint`).
 - For API-only apps, use install callback endpoint to receive initial OAuth tokens.
-- Install callback handlers run on backend calls from Bitrix24; do not call `BX24.installFinish()` there.
+- Install callback handlers run on backend calls from Bitrix24. Do not call `BX24.installFinish()` there.
 
-## Install-Time Validation
+## App Lifecycle and Trust Model
 
-- At install/setup, check availability of required REST methods, events, and features.
-- Do not assume identical method support across cloud and box or across box instances.
-- Re-register event bindings during each install/update cycle.
+### On install (`OnAppInstall`)
 
-## Scopes and Permissions
+- save `application_token` per portal (`member_id`)
+- persist portal identity and OAuth endpoints
+- initialize event/widget bindings
+
+### On uninstall (`OnAppUninstall`)
+
+- use `CLEAN` flag for cleanup policy
+- after uninstall, app API access is already revoked; do not plan API calls in uninstall handler
+- verify `application_token` even on uninstall (critical trust check)
+
+### Method confirmation (`OnAppMethodConfirm`)
+
+- handle admin confirmation result asynchronously
+- map token -> method -> confirmed state
+- re-run previously blocked call only when confirmation state is positive
+
+## Scopes and Confirmation Lifecycle
 
 - Request least-privilege scopes only.
-- Validate the current app scope set and handle `insufficient_scope` explicitly.
-- For methods that require admin confirmation, handle confirmation lifecycle and retries.
+- Validate granted scopes at startup and before risky flows.
+- Handle admin-confirm methods explicitly:
+  - `METHOD_CONFIRM_WAITING`
+  - `METHOD_CONFIRM_DENIED`
+- Confirmation is token-bound. New token requires re-confirmation.
+- Keep retry workflow idempotent and bounded by timeout/backoff.
+
+## Install-Time and Update-Time Validation
+
+- Verify required methods, events, and features on each install/update.
+- Re-register event bindings during each install/update cycle.
+- Verify actual bindings via `event.get` after bind operations.
+- Do not assume parity across cloud/box or across portals with different editions/tariffs.
+
+## REST v3 Boundary and Migration Rules
+
+- REST v3 methods are addressed via `/rest/api/...` routes.
+- REST v2 and v3 can coexist; use hybrid strategy where v3 coverage is partial.
+- Current docs note SDK gap for `/rest/api/` calls. Use direct HTTP requests where needed.
+- For v3-only methods, enforce JSON request body and POST for parameterized calls.
 
 ## Box REST Provider Implementation (Server-Side Extension)
 
@@ -44,90 +105,105 @@ Apply this section only for `Bitrix24 box` or `Site Management` module developme
 
 - Register methods through `onRestServiceBuildDescription()` and return explicit scope map.
 - For small APIs, map each REST method directly to callback (`scope.method` => handler).
-- For large APIs, use single dispatcher callback plus method registry (core CRM pattern) to centralize validation/routing.
+- For large APIs, use single dispatcher callback plus method registry to centralize validation/routing.
 - For custom REST events, publish `\CRestUtil::EVENTS` metadata and include supported options in description.
-- At method entry, run permission checks first and throw typed exceptions (`AccessException`/`RestException`) on deny/invalid input.
-- Validate and normalize request params before any DB write (`array_change_key_case`, strict type checks, required fields).
+- At method entry, run permission checks first and throw typed exceptions (`AccessException`/`RestException`).
+- Validate and normalize request params before any DB write.
 - If app data is stored in module tables, clean it on app removal via `onRestAppDelete` and `CLEAN=true`.
-- For sync-style handlers, add loop guards/idempotency markers so integration does not retrigger itself.
+- For sync-style handlers, add loop guards/idempotency markers to avoid self-trigger loops.
 
 ## Token Lifecycle
 
 - Store `access_token` and `refresh_token` securely and atomically.
 - Keep token sets keyed by portal (`member_id`/domain) and app context.
-- `refresh_token` lifetime is finite (documented as up to 180 days); refresh with server-side flow.
-- Refresh on auth-expiry/invalid-token path (or infrequent keepalive), not before every request.
-- Persist newly issued token pair atomically before retrying failed REST call.
-- Handle non-retryable auth states (`PAYMENT_REQUIRED`, uninstall, disabled app) as terminal.
+- `refresh_token` lifetime is finite (commonly up to 180 days in docs).
+- Refresh on auth-expiry/invalid-token path (or periodic keepalive), not on every request.
+- Persist new token pair atomically before retrying failed call.
+- Handle terminal auth states (`PAYMENT_REQUIRED`, uninstall, disabled app) without infinite retry.
 
 ## Request Mechanics
 
-- Prefer JSON request bodies for complex payloads.
-- URL-encode parameters correctly; for `batch`, apply required double encoding rules.
-- Use `batch` to reduce hit count where safe:
-  - maximum 50 commands per batch
-  - no nested `batch` calls
-- Use `halt` in batch chains when partial execution is risky.
+- Prefer JSON bodies for complex payloads.
+- URL-encode parameters correctly.
+- Use `batch` to reduce call count where safe:
+  - max 50 commands per batch
+  - no nested `batch`
+- Use `halt` for chain safety when partial execution is risky.
 
 ## Pagination and Load Control
 
-- For list methods, process `next` and `start` pagination flow.
-- Use explicit field selection (`select`) to minimize payload.
-- For huge datasets, design chunked processing and backpressure-safe workers.
+- For v2 list methods, process `next`/`start` flow.
+- For large datasets, use explicit `select` fields and chunked workers.
+- For offline queue reads:
+  - `event.offline.list` has fixed page size 50
+  - use `start = (N - 1) * 50` for page navigation
 
 ## Cloud Limits and Performance Signals
 
-- Cloud request intensity is rate-limited with leaky-bucket behavior; handle `503 QUERY_LIMIT_EXCEEDED`.
-- Documented baseline limits:
-  - non-enterprise: refill `2 req/s`, bucket `50`,
-  - enterprise: refill `5 req/s`, bucket `250`.
-- Rate accounting is per portal and source IP; multiple apps behind one IP share pressure.
-- Monitor REST response `time.operating` and `time.operating_reset_at`.
-- In cloud, per-method operating budget can be blocked when cumulative operating time is exhausted.
+- Handle `503 QUERY_LIMIT_EXCEEDED` with backoff and jitter.
+- Track response `time.operating` and `time.operating_reset_at`.
+- Model rate pressure per portal and source IP.
+- Prevent head-of-line blocking with queue-based workers and bounded concurrency.
 
 ## Events and Webhooks (Online)
 
-- Verify `application_token` in event handlers.
-- Keep event handlers fast; offload heavy processing to queues/workers.
-- Ensure handler URL is reachable from Bitrix24 servers (no private-only endpoints).
-- `event.unbind` requires admin context; design unbind flows accordingly.
-- On reinstall/update, bindings can be reset: always re-bind from installer/update flow.
-- Keep `event.get` verification in health/debug routines.
+- Verify `application_token` in every event handler.
+- Keep handlers fast and offload heavy work to queues/workers.
+- Ensure handler URLs are reachable from Bitrix24 servers.
+- `event.unbind` requires admin context; design role-aware unbind flows.
+- Re-bind on reinstall/update because bindings can reset.
 
-## Offline Events (Sync-Oriented)
+## Offline Events Reliability Contract
 
-- Register offline flow with `event.bind` + `event_type=offline` (+ `auth_connector` when used).
-- Offline queues are consumed via:
-  - `event.offline.list` (read-only queue view),
-  - `event.offline.get` (claim/consume batches),
-  - `event.offline.clear` (confirm processed items),
-  - `event.offline.error` (mark failed items).
-- `event.offline.get` default behavior clears claimed data (`clear=1`); use `clear=0` for safe processing.
-- With `clear=0`, keep `process_id`, process payload, then clear by `process_id` (optionally partial IDs).
-- `event.offline.list` uses fixed page size (50) and `start`-based paging.
-- Multithreaded `event.offline.get` is supported; claimed batches are separated across workers.
-- Use `auth_connector` consistently in write calls to avoid self-trigger sync loops (plan fallback for tiers where unavailable).
-- Box source constraints to enforce in integration code:
-  - `event.offline.*` endpoints are admin-only in app auth context.
-  - `event.bind` with `event_type=offline` also requires admin rights.
-  - `clear=0` flow can be feature-gated (`rest_offline_extended`) on some portals.
-  - `event.offline.clear` validates `message_id` format strictly (32-char IDs); keep payload validation explicit.
+- Register offline flow via `event.bind` with `event_type=offline`.
+- Use `feature.get` for:
+  - `rest_offline_extended`
+  - `rest_auth_connector`
+- Consume queue via:
+  - `event.offline.list` (read-only)
+  - `event.offline.get` (claim/consume)
+  - `event.offline.clear` (ack)
+  - `event.offline.error` (mark failed)
 
-## Box Network and Deployment Notes
+Safe flow:
 
-- Document required outbound access to OAuth/auth-related endpoints.
-- Document required inbound access for event/webhook handlers.
-- Include firewall/IP update policy if infrastructure relies on allowlists.
-- For iframe-based UI apps, ensure frame headers allow embedding in Bitrix24:
-  - avoid conflicting `X-Frame-Options` across proxy/app layers.
+1. Call `event.offline.get` with `clear=0`.
+2. Process returned batch and keep `process_id`.
+3. Ack success with `event.offline.clear` by `process_id` (and optional IDs).
+4. Mark failures with `event.offline.error`.
+
+Additional rules:
+
+- default `clear=1` can lose events if worker crashes after fetch; prefer `clear=0`.
+- `event.offline.get` supports multithreaded parsing with non-overlapping batches.
+- Use `auth_connector` consistently on write calls to avoid self-loop events (with feature fallback strategy).
+- Optional hybrid trigger: use `onOfflineEvent` with `minTimeout` to avoid aggressive polling.
+
+## Widgets and Placement Notes
+
+- `placement.bind` is admin-level and should be part of install/update flows.
+- Widgets are not fully visible to non-admin users until app installation is finished.
+- For `placement.unbind`, docs page is marked incomplete in current dump; validate behavior in runtime before codifying strict assumptions.
+
+## File Upload Integration Notes
+
+Bitrix has multiple file payload patterns. Select by target field type:
+
+- direct base64 string in `file`
+- `[filename, base64]` tuple
+- `fileData` object
+- disk-first upload for disk-bound fields
+
+Use one normalized upload abstraction in your integration layer to avoid endpoint-specific mistakes.
 
 ## Minimal Integration Deliverables
 
 - Auth model decision (`webhook` vs `oauth`).
 - Scope matrix and permission rationale.
-- Runtime capability matrix (`scope`/`method.get`/`feature.get` checks).
-- Event registration map and handler verification strategy.
-- Offline-event processing contract (if used): claim, ack, error, retry.
+- Runtime capability matrix (`scope`/`method.get`/`feature.get`).
+- Event registration map and verification strategy.
+- Offline queue contract (claim, ack, error, retry), if used.
+- Confirmation-flow handling (`METHOD_CONFIRM_*`, `OnAppMethodConfirm`).
 - Retry/idempotency/error-handling contract.
 - Limits/backoff strategy (`QUERY_LIMIT_EXCEEDED`, operating windows).
-- Rollback and operational diagnostics plan.
+- Rollback and diagnostics plan.

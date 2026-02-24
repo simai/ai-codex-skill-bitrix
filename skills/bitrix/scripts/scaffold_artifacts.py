@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate Bitrix release/testing artifacts from skill templates."""
+"""Generate Bitrix release/testing/REST artifacts from skill templates."""
 
 from __future__ import annotations
 
@@ -17,6 +17,22 @@ TEMPLATE_MAP = {
     "regression": ("template-regression-checklist.md", "regression-checklist.md"),
     "qa": ("template-qa-report.md", "qa-report.md"),
     "moderator_precheck": ("template-moderator-precheck.md", "moderator-precheck.md"),
+    "rest_crm_pack": (
+        "template-rest-domain-crm-artifact-pack.md",
+        "rest-domain-crm-artifact-pack.md",
+    ),
+    "rest_tasks_pack": (
+        "template-rest-domain-tasks-artifact-pack.md",
+        "rest-domain-tasks-artifact-pack.md",
+    ),
+    "rest_user_pack": (
+        "template-rest-domain-user-artifact-pack.md",
+        "rest-domain-user-artifact-pack.md",
+    ),
+    "rest_disk_pack": (
+        "template-rest-domain-disk-artifact-pack.md",
+        "rest-domain-disk-artifact-pack.md",
+    ),
 }
 
 PRESETS = {
@@ -24,13 +40,23 @@ PRESETS = {
     "release": ["release", "changelog", "regression"],
     "marketplace": ["release", "changelog", "regression", "moderator_precheck"],
     "qa": ["qa", "regression"],
+    "rest_crm": ["rest_crm_pack"],
+    "rest_tasks": ["rest_tasks_pack"],
+    "rest_user": ["rest_user_pack"],
+    "rest_disk": ["rest_disk_pack"],
+    "rest_all": [
+        "rest_crm_pack",
+        "rest_tasks_pack",
+        "rest_user_pack",
+        "rest_disk_pack",
+    ],
     "full": list(TEMPLATE_MAP.keys()),
 }
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Scaffold Bitrix artifacts from skill templates."
+        description="Scaffold Bitrix artifacts (release/update/qa/rest-domain) from skill templates."
     )
     parser.add_argument(
         "--out",

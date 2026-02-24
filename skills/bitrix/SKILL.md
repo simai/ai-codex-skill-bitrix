@@ -29,6 +29,15 @@ For `Bitrix24 cloud`, do not propose filesystem module/component implementation 
    - admin UI implementation cookbook (menus/options/lists/tabs/notes/progress/dialogs): `references/admin-ui-patterns-cookbook.md`
    - iblock/highloadblock architecture and admin data patterns: `references/iblock-hlblock-patterns.md`
    - Bitrix24 REST integrations: `references/bitrix24-rest-integration.md`
+   - Bitrix24 REST source triage policy: `references/bitrix24-rest-docs-triage.md`
+   - Bitrix24 REST v3 migration boundaries: `references/bitrix24-rest-v3-migration.md`
+   - Bitrix24 REST event lifecycle contract: `references/bitrix24-rest-event-lifecycle.md`
+   - Bitrix24 REST domain pack (CRM): `references/bitrix24-rest-domain-crm.md`
+   - Bitrix24 REST domain pack (Tasks): `references/bitrix24-rest-domain-tasks.md`
+   - Bitrix24 REST domain pack (User): `references/bitrix24-rest-domain-user.md`
+   - Bitrix24 REST domain pack (Disk): `references/bitrix24-rest-domain-disk.md`
+   - Bitrix24 REST domain quickstart: `references/bitrix24-rest-domain-quickstart.md`
+   - Bitrix24 REST domain artifact templates: `references/template-rest-domain-*-artifact-pack.md`
    - Bitrix24 marketplace publication/moderation: `references/bitrix24-marketplace-publication.md`
    - updates/releases: `references/update-and-release.md`
    - testing/QA: `references/testing-qa.md`
@@ -117,7 +126,7 @@ Additional required artifacts:
 
 You may scaffold artifact files with:
 
-- `scripts/scaffold_artifacts.py --out <dir> --preset update|release|marketplace|qa|full [--overwrite]`
+- `scripts/scaffold_artifacts.py --out <dir> --preset update|release|marketplace|qa|rest_crm|rest_tasks|rest_user|rest_disk|rest_all|full [--overwrite]`
 - `scripts/scaffold_module_admin.py --project-root <repo> --module-id <vendor.module> --entity <entity_code> [--namespace Vendor\\Module] [--overwrite]`
 - `scripts/scaffold_data_layer.py --project-root <repo> --module-id <vendor.module> --entity <entity_code> --storage iblock|hlblock|both [--namespace Vendor\\Module] [--iblock-id 10] [--hl-id 12] [--overwrite]`
 - `scripts/scaffold_qa_gate.py --out <dir> --module-id <vendor.module> [--module-path local/modules/<vendor.module>] [--version 1.2.3] [--environment stage] [--overwrite]`
@@ -138,6 +147,14 @@ You may scaffold artifact files with:
 - `references/admin-ui-patterns-cookbook.md`: detailed build patterns for menu, options page, list/filter tables, tab forms, context menus, notes, notifications, progress bars, and dialogs.
 - `references/iblock-hlblock-patterns.md`: practical architecture and implementation patterns for iblock/highloadblock data and admin UX.
 - `references/bitrix24-rest-integration.md`: auth/scopes/events/performance rules for Bitrix24 REST.
+- `references/bitrix24-rest-docs-triage.md`: source-quality triage for large Bitrix24 REST docs dumps (stable/caution/deprecated).
+- `references/bitrix24-rest-v3-migration.md`: v2/v3/hybrid routing and phased migration contract for REST integrations.
+- `references/bitrix24-rest-event-lifecycle.md`: install/update/runtime/uninstall lifecycle for event-driven REST apps.
+- `references/bitrix24-rest-domain-crm.md`: domain-specific triage/contract/templates/QA for CRM REST integrations.
+- `references/bitrix24-rest-domain-tasks.md`: domain-specific triage/contract/templates/QA for Tasks REST integrations.
+- `references/bitrix24-rest-domain-user.md`: domain-specific triage/contract/templates/QA for User REST integrations.
+- `references/bitrix24-rest-domain-disk.md`: domain-specific triage/contract/templates/QA for Disk REST integrations.
+- `references/bitrix24-rest-domain-quickstart.md`: end-to-end flow for domain-mode REST tasks (bootstrap -> domain pack -> artifacts -> QA -> delivery).
 - `references/bitrix24-marketplace-publication.md`: engineering and moderation checklist for Bitrix24 marketplace submissions.
 - `references/external-knowledge.md`: policy for extracting reusable rules from external knowledge dumps.
 - `references/update-and-release.md`: diff-to-release workflow, migration discipline, rollback, versioning.
@@ -156,6 +173,13 @@ You may scaffold artifact files with:
 - `references/template-moderator-precheck.md`: marketplace moderation precheck template.
 - `references/template-module-install-index.php.md`: starter installer class template for module lifecycle.
 - `references/template-rest-service-provider.php.md`: server-side REST method/event provider template for box modules.
+- `references/template-rest-capability-bootstrap.md`: startup capability probe template (`scope`, `method.get`, `feature.get`).
+- `references/template-rest-offline-worker-contract.md`: safe offline queue worker contract (`event.offline.get/clear/error`).
+- `references/template-rest-method-confirm-handler.md`: admin confirmation handling template (`METHOD_CONFIRM_*`, `OnAppMethodConfirm`).
+- `references/template-rest-domain-crm-artifact-pack.md`: ready artifact skeleton (`integration plan`, `scope matrix`, `event map`, `QA`) for CRM domain integrations.
+- `references/template-rest-domain-tasks-artifact-pack.md`: ready artifact skeleton (`integration plan`, `scope matrix`, `event map`, `QA`) for Tasks domain integrations.
+- `references/template-rest-domain-user-artifact-pack.md`: ready artifact skeleton (`integration plan`, `scope matrix`, `event map`, `QA`) for User domain integrations.
+- `references/template-rest-domain-disk-artifact-pack.md`: ready artifact skeleton (`integration plan`, `scope matrix`, `event map`, `QA`) for Disk domain integrations.
 - `references/template-component-baseline.md`: starter component template (`class.php`, params, cache, template).
 - `references/template-component-advanced-pagination-tagcache.md`: advanced component template with pagination, tag cache, and cache key export.
 - `references/template-admin-list-cadminlist.md`: starter admin list template with filter, row actions, and group actions.
@@ -178,5 +202,8 @@ You may scaffold artifact files with:
 - `examples/new-module-site-management.md`: scenario recipe for greenfield module implementation.
 - `examples/existing-project-fix.md`: scenario recipe for focused fixes in existing codebase.
 - `examples/bitrix24-cloud-rest-app.md`: scenario recipe for Bitrix24 cloud REST app tasks.
+- `examples/rest-domain-artifacts/README.md`: ready examples for filled domain artifact packs (`CRM/Tasks/User/Disk`).
 - `examples/seeds/README.md`: dataset seeding guide for UX/performance checks.
 - `examples/ci/github-actions-bitrix-qa.yml`: CI template for running `qa_run.py` and publishing report artifact.
+- `examples/ci/github-actions-bitrix-rest-artifacts.yml`: CI template for generating REST domain artifact packs and publishing them as workflow artifacts.
+- `examples/ci/github-actions-bitrix-rest-qa.yml`: CI template for one-pass pipeline (`REST artifacts + QA report`) with both artifact outputs.
