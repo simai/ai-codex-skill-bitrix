@@ -37,7 +37,7 @@ Must skip when:
 
 - `BITRIX_ROOT` is not set
 - target module is not installed
-- `socialservices` module is not installed
+- any module from `BITRIX_REQUIRED_MODULES` is not installed (optional dependency gate)
 
 ### 3) Root docs
 
@@ -51,6 +51,7 @@ Root `README.md` must include:
 `tests/README.md` must include:
 
 - how to set `BITRIX_ROOT`
+- how to set optional `BITRIX_REQUIRED_MODULES` if project depends on extra modules
 - module installation requirement
 - run examples for CLI/manual/IDE
 

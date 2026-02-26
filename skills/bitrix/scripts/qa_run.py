@@ -478,7 +478,7 @@ def build_recommendations(
     integration = by_name.get("PHPUnit Integration Suite")
     if integration and integration.status == STATUS_NA:
         recs.append(
-            "Integration suite was skipped. Set `BITRIX_ROOT` and ensure module + socialservices are installed."
+            "Integration suite was skipped. Set `BITRIX_ROOT` and ensure target module plus optional required modules are installed."
         )
     elif integration and integration.status == STATUS_FAIL:
         recs.append(

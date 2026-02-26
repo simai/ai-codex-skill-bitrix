@@ -45,16 +45,17 @@ python3 skills/bitrix/scripts/qa_run.py \
   --phpunit-bin "/custom/path/phpunit"
 ```
 
-## 3) `Module socialservices is not installed`
+## 3) `Required module is not installed: <module>`
 
 Symptoms:
 
-- Integration checks fail/skip at bootstrap.
+- Integration checks fail/skip at bootstrap with message about missing required module.
 
 Fix options:
 
-1. Install `socialservices` in target Bitrix environment.
-2. Keep integration as `N-A` and document constraint in QA report if module is not required for current release scope.
+1. Install the missing module in target Bitrix environment.
+2. If module is optional for current release scope, remove it from `BITRIX_REQUIRED_MODULES` and document this constraint in QA report.
+3. Keep base integration test dependent only on target module (`BITRIX_MODULE_ID`) and avoid hardcoded dependencies.
 
 ## 4) `Module is not installed: vendor.module`
 

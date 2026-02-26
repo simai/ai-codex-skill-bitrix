@@ -21,12 +21,18 @@ For every section A-I output:
 - Reinstall and uninstall scenarios are deterministic.
 - Update path works from previous target versions.
 - `savedata=Y/N` behavior is explicit and correct.
+- Component settings dialog opens and keeps current values (no endless loading, no empty params for configured page).
+- Public folders/shared data cleanup is ownership-based (marker/option) and does not remove foreign files.
+- Copied component directories are fully removed on uninstall (no stale residue).
+- Multi-site site-code conventions for iblock type/code are preserved after install/reinstall.
 
 Evidence examples:
 
 - install/uninstall logs
 - DB state before/after
 - module registration state (`b_module`)
+- component parser check (`PHPParser::FindComponent(...)->DATA["PARAMS"]` is array)
+- filesystem residue check (`/bitrix/components/<vendor>/<component>` absent after uninstall)
 
 ## B) Code Quality (Localization, Magic Numbers, Debug)
 

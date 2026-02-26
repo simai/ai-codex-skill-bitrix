@@ -7,6 +7,7 @@ For strict quality gate (A-I sections and static->dynamic order), also apply:
 - `references/qa-gate-checklist.md`
 - `references/template-qa-audit-prompt.md`
 - `references/root-testing-toolkit.md`
+- `references/site-module-hardening.md` (for Site Management/box filesystem modules)
 - `references/troubleshooting.md`
 - `references/bitrix24-rest-integration.md`
 - `references/bitrix24-rest-event-lifecycle.md`
@@ -45,6 +46,7 @@ Execution order:
 
 - Install/update flow works without critical errors.
 - Admin pages/settings open and save correctly.
+- Component visual editor opens with prefilled params for editable public pages.
 - Primary business happy-path works end to end.
 - Permission checks and CSRF checks are intact.
 - No critical PHP/runtime errors in logs.
@@ -56,6 +58,13 @@ Execution order:
 - Migration/update side effects are verified.
 - Cache behavior remains correct for affected flows.
 - Rollback steps are validated for risky updates.
+
+Site module/component addendum (Site Management/box filesystem scope):
+
+- Apply `references/site-module-hardening.md` as mandatory preflight + release gate.
+- Verify uninstall removes copied component folders even when extra local files exist.
+- Verify public folder cleanup is marker/ownership-based.
+- Verify per-site iblock type/code isolation is preserved after reinstall.
 
 ## Security and Reliability Checks
 

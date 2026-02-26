@@ -16,6 +16,13 @@ Run this checklist before final delivery.
 - Compatibility strategy is documented for existing records.
 - For update tasks, Migration Notes exist even when there are no schema/data changes.
 
+## Site Module/Component Hardening (Site Management / Box)
+
+- Visual editor compatibility is validated for editable component pages (params prefilled).
+- Public folders and shared data directories use ownership markers before uninstall deletion.
+- Component folders copied to `/bitrix/components` are force-cleaned on uninstall (`DeleteDirFilesEx` path check).
+- Per-site iblock type/code bindings are validated on fresh install and reinstall.
+
 ## Security
 
 - Input validation and output escaping are in place where applicable.

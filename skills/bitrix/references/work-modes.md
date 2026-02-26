@@ -17,6 +17,7 @@ Use with:
 
 - `references/module-contract.md`
 - `references/blueprints.md`
+- `references/site-module-hardening.md` (for Site Management/box filesystem modules)
 
 ## 2) Project Change (Feature/Fix)
 
@@ -33,6 +34,7 @@ Use with:
 
 - `references/blueprints.md`
 - `references/testing-qa.md`
+- `references/site-module-hardening.md` (for Site Management/box filesystem modules)
 
 ## 3) Update by Diff/Commits
 
@@ -70,6 +72,7 @@ Use with:
 - `references/update-and-release.md`
 - `references/bitrix24-marketplace-publication.md`
 - `references/release-checklist.md`
+- `references/site-module-hardening.md` (for Site Management/box filesystem modules)
 
 ## 5) Testing / QA
 

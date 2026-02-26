@@ -79,3 +79,5 @@ When task explicitly targets Marketplace packaging:
 
 - Keep partner metadata assignments explicit and static in install constructor.
 - Avoid dynamic expressions for marketplace-identifying metadata fields.
+- For `simai.*` modules apply `references/simai-branding.md`:
+  - set `$this->PARTNER_NAME` to official SIMAI SVG logo markup in installer constructor.

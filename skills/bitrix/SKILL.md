@@ -41,6 +41,8 @@ For `Bitrix24 cloud`, do not propose filesystem module/component implementation 
    - Bitrix24 marketplace publication/moderation: `references/bitrix24-marketplace-publication.md`
    - updates/releases: `references/update-and-release.md`
    - testing/QA: `references/testing-qa.md`
+   - site module/component hardening (Site Management/box): `references/site-module-hardening.md`
+   - SIMAI partner branding rule for marketplace metadata: `references/simai-branding.md`
    - troubleshooting: `references/troubleshooting.md`
 7. Run `references/release-checklist.md` before finalizing.
 
@@ -104,6 +106,14 @@ If definition of done is missing, derive a temporary done contract:
 - After live template fixes, clear `bitrix/cache`, `bitrix/managed_cache`, `bitrix/stack_cache`, and `bitrix/html_pages`.
 - If `patch` tooling was used, remove `*.orig` artifacts before commit.
 
+## Practical Patterns: Site Module Hardening (Site/Box)
+
+- For editable public pages, keep component params parser-friendly: visual editor must read actual params from page source.
+- For dynamic per-site setup, generate final public `index.php` during install with resolved literal params.
+- Use marker-based ownership for public folders and shared data directories before deleting on uninstall.
+- For copied components, pair `DeleteDirFiles(...)` with explicit `DeleteDirFilesEx(...)` cleanup for target folders.
+- Treat extra module dependencies as optional test gate (`BITRIX_REQUIRED_MODULES`), not hardcoded mandatory module list.
+
 ## Artifact Contract
 
 Use mode-specific outputs from `references/work-modes.md` and templates from `references/template-*.md`.
@@ -159,6 +169,8 @@ You may scaffold artifact files with:
 - `references/external-knowledge.md`: policy for extracting reusable rules from external knowledge dumps.
 - `references/update-and-release.md`: diff-to-release workflow, migration discipline, rollback, versioning.
 - `references/testing-qa.md`: smoke/regression and evidence model.
+- `references/site-module-hardening.md`: strict anti-regression playbook for filesystem modules/components and public data lifecycle.
+- `references/simai-branding.md`: required partner logo SVG metadata rule for `simai.*` modules.
 - `references/qa-gate-checklist.md`: strict QA checklist A-I with mandatory static-first and dynamic-second execution.
 - `references/root-testing-toolkit.md`: root-level static and integration test toolkit contract (outside module folders).
 - `references/troubleshooting.md`: common failure diagnostics for QA/runtime/setup issues.
@@ -201,6 +213,7 @@ You may scaffold artifact files with:
 - `scripts/search_reference_dump.py`: optional search utility for large external docs dumps.
 - `examples/new-module-site-management.md`: scenario recipe for greenfield module implementation.
 - `examples/existing-project-fix.md`: scenario recipe for focused fixes in existing codebase.
+- `examples/site-module-hardening-fix.md`: scenario recipe for installer/public page/component cleanup regressions.
 - `examples/bitrix24-cloud-rest-app.md`: scenario recipe for Bitrix24 cloud REST app tasks.
 - `examples/rest-domain-artifacts/README.md`: ready examples for filled domain artifact packs (`CRM/Tasks/User/Disk`).
 - `examples/seeds/README.md`: dataset seeding guide for UX/performance checks.

@@ -173,6 +173,7 @@ Integration mode:
 ```bash
 BITRIX_ROOT=/absolute/path/to/site \
 BITRIX_MODULE_ID={module_id} \
+BITRIX_REQUIRED_MODULES="iblock,highloadblock" \
 vendor/bin/phpunit -c phpunit.xml.dist --testsuite integration
 ```
 
@@ -384,6 +385,7 @@ final class BitrixIntegrationTest extends TestCase
 {{
     private static string $bitrixRoot = '';
     private static string $moduleId = '{module_id}';
+    private static array $requiredModules = [];
 
     public static function setUpBeforeClass(): void
     {{
@@ -392,6 +394,13 @@ final class BitrixIntegrationTest extends TestCase
         if ($moduleFromEnv !== '')
         {{
             self::$moduleId = $moduleFromEnv;
+        }}
+        $requiredModulesFromEnv = (string)getenv('BITRIX_REQUIRED_MODULES');
+        if ($requiredModulesFromEnv !== '')
+        {{
+            $required = array_map('trim', explode(',', $requiredModulesFromEnv));
+            $required = array_values(array_unique(array_filter($required, static fn(string $value): bool => $value !== '')));
+            self::$requiredModules = $required;
         }}
 
         if (self::$bitrixRoot === '')
@@ -416,9 +425,12 @@ final class BitrixIntegrationTest extends TestCase
             self::markTestSkipped('Module is not installed: ' . self::$moduleId);
         }}
 
-        if (!\\Bitrix\\Main\\Loader::includeModule('socialservices'))
+        foreach (self::$requiredModules as $requiredModule)
         {{
-            self::markTestSkipped('Module socialservices is not installed.');
+            if (!\\Bitrix\\Main\\Loader::includeModule($requiredModule))
+            {{
+                self::markTestSkipped('Required module is not installed: ' . $requiredModule);
+            }}
         }}
     }}
 
@@ -432,9 +444,22 @@ final class BitrixIntegrationTest extends TestCase
         $this->assertTrue(\\Bitrix\\Main\\Loader::includeModule(self::$moduleId));
     }}
 
-    public function testSocialservicesLoaded(): void
+    public function testRequiredModulesLoadedOrNotConfigured(): void
     {{
-        $this->assertTrue(\\Bitrix\\Main\\Loader::includeModule('socialservices'));
+        if (empty(self::$requiredModules))
+        {{
+            $this->addToAssertionCount(1);
+            $this->assertTrue(true);
+            return;
+        }}
+
+        foreach (self::$requiredModules as $requiredModule)
+        {{
+            $this->assertTrue(
+                \\Bitrix\\Main\\Loader::includeModule($requiredModule),
+                'Required module is not loaded: ' . $requiredModule
+            );
+        }}
     }}
 }}
 """
@@ -450,18 +475,20 @@ Environment variables:
 
 - `BITRIX_ROOT` — absolute path to site document root.
 - `BITRIX_MODULE_ID` — module ID under test (default: `{module_id}`).
+- `BITRIX_REQUIRED_MODULES` — optional comma-separated module IDs required by your project.
 
 Skip rules:
 
 - tests are skipped if `BITRIX_ROOT` is missing
 - tests are skipped if module is not installed
-- tests are skipped if `socialservices` module is not installed
+- tests are skipped if any module from `BITRIX_REQUIRED_MODULES` is not installed
 
 Run integration suite:
 
 ```bash
 BITRIX_ROOT=/absolute/path/to/site \\
 BITRIX_MODULE_ID={module_id} \\
+BITRIX_REQUIRED_MODULES="iblock,highloadblock" \\
 vendor/bin/phpunit -c phpunit.xml.dist --testsuite integration
 ```
 """

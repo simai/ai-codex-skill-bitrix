@@ -37,13 +37,13 @@ class vendor_module extends CModule
 
 	public function InstallDB($params = [])
 	{
-		global $DB, $APPLICATION;
+		global $APPLICATION;
 		$connection = Application::getConnection();
 
-		$this->errors = $DB->RunSQLBatch(
+		$this->errors = $this->runSqlBatch(
 			$_SERVER['DOCUMENT_ROOT'] . '/local/modules/vendor.module/install/db/' . $connection->getType() . '/install.sql'
 		);
-		if ($this->errors !== false)
+		if (!empty($this->errors))
 		{
 			$APPLICATION->ThrowException(implode('<br>', $this->errors));
 			return false;
@@ -57,7 +57,7 @@ class vendor_module extends CModule
 
 	public function UnInstallDB($params = [])
 	{
-		global $DB, $APPLICATION;
+		global $APPLICATION;
 		$connection = Application::getConnection();
 
 		$this->uninstallEventHandlers();
@@ -65,10 +65,10 @@ class vendor_module extends CModule
 
 		if (($params['savedata'] ?? 'Y') !== 'Y')
 		{
-			$this->errors = $DB->RunSQLBatch(
+			$this->errors = $this->runSqlBatch(
 				$_SERVER['DOCUMENT_ROOT'] . '/local/modules/vendor.module/install/db/' . $connection->getType() . '/uninstall.sql'
 			);
-			if ($this->errors !== false)
+			if (!empty($this->errors))
 			{
 				$APPLICATION->ThrowException(implode('<br>', $this->errors));
 				return false;
@@ -117,6 +117,26 @@ class vendor_module extends CModule
 	private function uninstallAgents(): void
 	{
 		CAgent::RemoveModuleAgents($this->MODULE_ID);
+	}
+
+	private function runSqlBatch(string $filePath): array
+	{
+		global $DB;
+
+		$connection = Application::getConnection();
+		if (method_exists($connection, 'runSqlBatch'))
+		{
+			$result = $connection->runSqlBatch($filePath);
+			return is_array($result) ? $result : [];
+		}
+
+		if (is_object($DB) && method_exists($DB, 'RunSQLBatch'))
+		{
+			$result = $DB->RunSQLBatch($filePath);
+			return is_array($result) ? $result : [];
+		}
+
+		return ['SQL batch runner is not available for this Bitrix core build.'];
 	}
 
 	public function DoInstall()
@@ -191,3 +211,4 @@ Notes:
 - Keep `Install*` and `UnInstall*` symmetric.
 - Keep permission and session checks in `DoInstall`/`DoUninstall`.
 - If module must keep data by default, use `savedata=Y` gate as shown.
+- If component directories are copied to `/bitrix/components`, add explicit `DeleteDirFilesEx('/bitrix/components/<vendor>/<component>')` in uninstall.

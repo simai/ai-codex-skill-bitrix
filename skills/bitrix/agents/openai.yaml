@@ -1,4 +1,4 @@
 interface:
   display_name: "Bitrix"
   short_description: "Develop Bitrix modules for Site Management/box and REST app flows for Bitrix24 cloud."
-  default_prompt: "Implement or refactor 1C-Bitrix code for Site Management/box, or Bitrix24 cloud REST app integrations, with safe auth/scope/event handling and migration/release/QA artifacts."
+  default_prompt: "Implement or refactor 1C-Bitrix code for Site Management/box, or Bitrix24 cloud REST app integrations, with safe auth/scope/event handling and migration/release/QA artifacts. For Site Management/box filesystem modules always run site-module hardening preflight (installer compatibility, visual editor-safe component params, uninstall cleanup ownership checks)."
