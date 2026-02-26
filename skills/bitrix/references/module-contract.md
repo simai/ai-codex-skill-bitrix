@@ -61,7 +61,7 @@ Core-style implementation pattern (box source aligned):
 
 ## Versioning and Release Metadata
 
-- Initial version for new module: `1.0.0`.
+- Initial version for new module: `1.0.0` (never `0.x.x`).
 - Update `install/version.php` on release/update tasks.
 - Keep release metadata synchronized with generated release artifacts.
 - `install/version.php` is the standard source for module version metadata.

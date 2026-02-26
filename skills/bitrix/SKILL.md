@@ -88,6 +88,7 @@ If definition of done is missing, derive a temporary done contract:
 - Keep localization in `lang/` and message access through `Loc::getMessage(...)`.
 - Handle schema/content changes as versioned updates via install/update scripts or project migration tooling.
 - Keep business logic out of templates; move logic into services or module classes.
+- For new modules, initial version in `install/version.php` must be `1.0.0`; do not start from `0.x.x`.
 - For integrations, define idempotency, retries, and failure handling before coding.
 - For Bitrix24 REST event handlers, validate source and secret context (`application_token` checks for app events).
 - Keep webhook and OAuth secrets out of repository and frontend runtime payloads.
