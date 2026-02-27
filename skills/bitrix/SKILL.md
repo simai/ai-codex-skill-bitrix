@@ -93,6 +93,27 @@ If definition of done is missing, derive a temporary done contract:
 - For Bitrix24 REST event handlers, validate source and secret context (`application_token` checks for app events).
 - Keep webhook and OAuth secrets out of repository and frontend runtime payloads.
 - For risky refactors, preserve backward compatibility through adapters, feature flags, or phased rollout.
+- For module marketplace packaging, derive release version only from `local/modules/<module_id>/install/version.php` (`$arModuleVersion["VERSION"]`).
+- For marketplace validator compatibility, set `PARTNER_NAME` in `install/index.php` as a plain non-empty string; do not use heredoc/SVG/HTML in this field.
+
+## Practical Patterns: Marketplace Module Packaging (`.last_version.zip`)
+
+- If repository-based release flow is used, keep release artifacts under root `release/` directory.
+- If `release/` does not exist, create it before packaging.
+- Create version folder by module version: `release/<VERSION>/`.
+- Build marketplace archive as `release/<VERSION>/.last_version.zip`.
+- Archive root MUST contain `.last_version/` directory.
+- Place module files inside this directory: `.last_version/install/`, `.last_version/lib/`, `.last_version/lang/`, `.last_version/include.php`, etc.
+- Do not wrap module into extra `<module_id>/` directory under `.last_version/`.
+- Exclude service files from archive: `.DS_Store`, `__MACOSX`, `.git`, `.gitignore`, editor temporary files, local build temp folders.
+- Before finalizing, verify archive structure with `unzip -l release/<VERSION>/.last_version.zip`:
+  - top-level `.last_version/` exists,
+  - no extra module wrapper directory under `.last_version/`,
+  - no service/macos/git garbage files,
+  - required module files are present (at minimum `.last_version/install/index.php`, `.last_version/install/version.php`).
+- Validate installer metadata in `.last_version/install/index.php`:
+  - `PARTNER_NAME` is present and plain text,
+  - `PARTNER_URI` is present and non-empty.
 
 ## Practical Patterns: `bitrix:lists` in Bitrix24 Air
 
