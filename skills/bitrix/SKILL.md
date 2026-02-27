@@ -115,6 +115,22 @@ If definition of done is missing, derive a temporary done contract:
   - `PARTNER_NAME` is present and plain text,
   - `PARTNER_URI` is present and non-empty.
 
+## Practical Patterns: Marketplace Update Archive (`updates/<VERSION>.zip`)
+
+- Keep module update artifacts in root `updates/` directory.
+- Do not create module-specific subfolders for updates (avoid `updates/<module_id>/...`).
+- Build update archive as `updates/<VERSION>.zip` (example: `updates/2.9.3.zip`).
+- Keep only ZIP artifact in repository for update delivery; do not keep unpacked version folder under `updates/`.
+- ZIP root must contain `<VERSION>/` directory with update payload (not bare files).
+- Required minimum inside `<VERSION>/`:
+  - `install/version.php`
+  - `description.ru`
+  - changed/new module files in relative module paths.
+- `description.ru` for updates should be short and plain for non-technical users:
+  - no deep technical details,
+  - concise summary of what was fixed/changed,
+  - avoid verbose internal diagnostics.
+
 ## Practical Patterns: `bitrix:lists` in Bitrix24 Air
 
 - For Bitrix24 Air header actions, prefer `\Bitrix\UI\Toolbar\Facade\Toolbar::addButton(...)` over ad-hoc markup in view targets.
