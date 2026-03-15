@@ -47,6 +47,7 @@ Core-style implementation pattern (box source aligned):
 - Even with `savedata=Y`, still unregister handlers, remove agents, and detach runtime integrations.
 - For assets copied into shared targets like `/local/js`, uninstall must remove only module-owned mirrored files via `DeleteDirFiles($moduleInstallJsDir, $_SERVER['DOCUMENT_ROOT'].'/local/js')`.
 - Do not use `DeleteDirFilesEx('/local/js/<shared-dir>')` for shared frontend directories unless the whole subtree is exclusively owned by the module.
+- For box modules that may live in either `local/modules/<module_id>` or `bitrix/modules/<module_id>`, installer filesystem paths must be resolved with fallback instead of hardcoded to one root.
 
 ## Admin Proxy Contract
 
@@ -60,6 +61,7 @@ Core-style implementation pattern (box source aligned):
   - keep UI logic in `/local/modules/<module_id>/admin/<file>.php` or `/bitrix/modules/<module_id>/admin/<file>.php`.
 - Minimal bootstrap wrappers are acceptable (prolog/module include + `require_once`), but business logic stays in module admin files.
 - Build admin pages using standard APIs (`CAdminList`/`CAdminUiList`, `CAdminFilter`, `CAdminTabControl`, `CAdminContextMenu`, `CAdminMessage`) to keep compatibility with core behavior.
+- If module can be installed from both roots, admin proxies must check both locations in order: `/local/modules/<module_id>/admin/...` then `/bitrix/modules/<module_id>/admin/...`.
 
 ## Versioning and Release Metadata
 
