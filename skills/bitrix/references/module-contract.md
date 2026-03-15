@@ -45,6 +45,8 @@ Core-style implementation pattern (box source aligned):
 - Validate dependencies before install side effects (feature gates, required modules, license flags).
 - Isolate lifecycle code into dedicated methods (`installEventHandlers`, `uninstallEventHandlers`, `installAgents`, `uninstallAgents`) to keep symmetry explicit.
 - Even with `savedata=Y`, still unregister handlers, remove agents, and detach runtime integrations.
+- For assets copied into shared targets like `/local/js`, uninstall must remove only module-owned mirrored files via `DeleteDirFiles($moduleInstallJsDir, $_SERVER['DOCUMENT_ROOT'].'/local/js')`.
+- Do not use `DeleteDirFilesEx('/local/js/<shared-dir>')` for shared frontend directories unless the whole subtree is exclusively owned by the module.
 
 ## Admin Proxy Contract
 

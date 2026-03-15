@@ -258,7 +258,34 @@ When to choose:
 - Need UI filter presets.
 - Need stable behavior for employee-like registries.
 
-## 7) Edit Form Pattern (`CAdminTabControl` / `CAdminForm`)
+## 7) Bitrix24 Box Task Card Extension Pattern (`local/js/tasks/external`)
+
+Use this pattern when a box module must add UI into the standard task card without patching core templates.
+
+Recommended approach:
+
+1. Ship a JS extension from module installer into `local/js/tasks/external`.
+2. Register extension config with explicit dependencies, usually:
+   - `main.core`
+   - `main.popup` for fallback
+   - `main.sidepanel` for slider UX
+   - `ui.notification`
+3. Attach to stable task card anchors such as `.tasks-full-card-chips`, not legacy selectors from older task layouts.
+4. Re-render extension UI after task card async reloads; do not assume first page paint is final.
+
+Practical rules:
+
+- Prefer adding a chip/button into the task chips row over injecting heavy custom blocks into core markup.
+- For rich task-related entities, prefer `BX.SidePanel.Instance.open(...)` over ad-hoc popup menus.
+- Keep popup fallback for environments where sidepanel is unavailable, but treat sidepanel as primary UX.
+- Bump extension `version` in `local/js/.../config.php` on every frontend fix that must invalidate Bitrix JS/CSS cache.
+- After deployment, clear `bitrix/cache/js` and `bitrix/cache/css` if stale frontend continues to load.
+
+Sidepanel note:
+
+- When multiple sidepanel labels exist in DOM, target only active visible nodes (for example `.side-panel-label.--close-label.--visible:not(.--hidden)`); hidden labels can coexist and mislead DOM-based styling or scripting.
+
+## 8) Edit Form Pattern (`CAdminTabControl` / `CAdminForm`)
 
 Use for entity create/edit pages with tabs.
 
@@ -294,7 +321,7 @@ Use `BeginCustomField/EndCustomField` for:
 
 Do not replace tab layout with arbitrary `<div>` forms.
 
-## 8) Context Menu Pattern
+## 9) Context Menu Pattern
 
 ### Edit pages
 
@@ -312,7 +339,7 @@ $context->Show();
 
 Use `$lAdmin->AddAdminContextMenu($aContext)` and keep primary create action there.
 
-## 9) Notification/Note/Progress Patterns
+## 10) Notification/Note/Progress Patterns
 
 ### Success / info / error
 
@@ -357,7 +384,7 @@ CAdminMessage::ShowMessage([
 
 This is the core-safe pattern for import/export style jobs.
 
-## 10) Dialog Pattern (`BX.CAdminDialog`)
+## 11) Dialog Pattern (`BX.CAdminDialog`)
 
 Use API-based admin dialogs, not handcrafted dialog HTML.
 
@@ -372,7 +399,7 @@ Example:
 })).Show();
 ```
 
-## 11) Highloadblock-Specific Admin Pattern
+## 12) Highloadblock-Specific Admin Pattern
 
 For HL rows:
 
@@ -387,7 +414,7 @@ For HL rows:
    - `ShowUserFieldsWithReadyData`
 5. Keep copy mode safe for file UF fields (clear file values before save).
 
-## 12) IBlock-Specific Admin Pattern
+## 13) IBlock-Specific Admin Pattern
 
 For iblock-heavy edit pages:
 
@@ -396,7 +423,7 @@ For iblock-heavy edit pages:
 - For option pages, use `CAdminTabControl` and deterministic POST save/redirect.
 - For long import/export flows, use PROGRESS messages with incremental steps.
 
-## 13) Anti-Patterns (Do Not Ship)
+## 14) Anti-Patterns (Do Not Ship)
 
 - Admin page in public layout (`header.php`/`footer.php`).
 - Business logic in `/bitrix/admin` proxy file.
@@ -405,7 +432,7 @@ For iblock-heavy edit pages:
 - Handcrafted modal shell instead of `BX.CAdminDialog`.
 - State-changing operations without `check_bitrix_sessid()`.
 
-## 14) Practical Checklist Before Merge
+## 15) Practical Checklist Before Merge
 
 1. Prolog/epilog and rights checks exist.
 2. Proxy file is thin, implementation is in module admin path.

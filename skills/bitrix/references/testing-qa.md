@@ -50,6 +50,7 @@ Execution order:
 - Primary business happy-path works end to end.
 - Permission checks and CSRF checks are intact.
 - No critical PHP/runtime errors in logs.
+- For Open Lines integrations, create real test sessions through widget/runtime flow, not only by DB fixtures.
 
 ## Regression Minimum
 
@@ -63,6 +64,7 @@ Site module/component addendum (Site Management/box filesystem scope):
 
 - Apply `references/site-module-hardening.md` as mandatory preflight + release gate.
 - Verify uninstall removes copied component folders even when extra local files exist.
+- Verify uninstall of copied `local/js` assets removes only module-owned files and does not wipe shared frontend directories.
 - Verify public folder cleanup is marker/ownership-based.
 - Verify per-site iblock type/code isolation is preserved after reinstall.
 
